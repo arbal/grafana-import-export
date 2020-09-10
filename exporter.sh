@@ -10,25 +10,35 @@ for row in "${ORGS[@]}" ; do
     KEY=${row#*:}
     DIR="$FILE_DIR/$ORG"
 
+    echo DashBoards
     mkdir -p "$DIR/dashboards"
-    mkdir -p "$DIR/datasources"
-    mkdir -p "$DIR/alert-notifications"
-
     for dash in $(fetch_fields $KEY 'search?query=&' 'uri'); do
         DB=$(echo ${dash}|sed 's,db/,,g').json
-        echo $DB
+        echo DashBoard $DB
         curl -f -k -H "Authorization: Bearer ${KEY}" "${HOST}/api/dashboards/${dash}" | jq 'del(.overwrite,.dashboard.version,.meta.created,.meta.createdBy,.meta.updated,.meta.updatedBy,.meta.expires,.meta.version)' > "$DIR/dashboards/$DB"
     done
 
+    echo DataSources
+    mkdir -p "$DIR/datasources"
     for id in $(fetch_fields $KEY 'datasources' 'id'); do
         DS=$(echo $(fetch_fields $KEY "datasources/${id}" 'name')|sed 's/ /-/g').json
-        echo $DS
+        echo DataSource $DS
         curl -f -k -H "Authorization: Bearer ${KEY}" "${HOST}/api/datasources/${id}" | jq '' > "$DIR/datasources/${id}.json"
     done
 
+    echo Alert-Notifications
+    mkdir -p "$DIR/alert-notifications"
     for id in $(fetch_fields $KEY 'alert-notifications' 'id'); do
         FILENAME=${id}.json
-        echo $FILENAME
+        echo alert-notification $FILENAME
         curl -f -k -H "Authorization: Bearer ${KEY}" "${HOST}/api/alert-notifications/${id}" | jq 'del(.created,.updated)' > "$DIR/alert-notifications/$FILENAME"
     done
+
+    BackupDir=$(dirname "$DIR")
+    cd "$BackupDir"
+    Backup_File=$(basename "$DIR")
+    Backup_Name="${Backup_File}_$(date '+%Y%m%d_%H%M%S').tgz"
+    tar -czf "$Backup_Name" "$Backup_File"
+    ls -lh "$BackupDir/$Backup_Name"
+    tar -tvf "$BackupDir/$Backup_Name"
 done
