@@ -15,24 +15,29 @@ for row in "${ORGS[@]}" ; do
     for dash in $(fetch_fields $KEY 'search?query=&' 'uri'); do
         DB=$(echo ${dash}|sed 's,db/,,g').json
         echo DashBoard $DB
-        curl -f -k -H "Authorization: Bearer ${KEY}" "${HOST}/api/dashboards/${dash}" | jq 'del(.overwrite,.dashboard.version,.meta.created,.meta.createdBy,.meta.updated,.meta.updatedBy,.meta.expires,.meta.version)' > "$DIR/dashboards/$DB"
+
+        #curl -f -k -H "Authorization: Bearer ${KEY}" "${HOST}/api/dashboards/${dash}" | jq 'del(.overwrite,.dashboard.version,.meta.created,.meta.createdBy,.meta.updated,.meta.updatedBy,.meta.expires,.meta.version)' > "$DIR/dashboards/$DB"
+
+        #added setting .dashboard.uid and .dashboard.id to NULL to allow Grafana to create new dashboard
+        curl -f -k -H "Authorization: Bearer ${KEY}" "${HOST}/api/dashboards/${dash}" | jq '.dashboard.uid |= null | .dashboard.id |= null | del(.overwrite,.dashboard.version,.meta.created,.meta.createdBy ,.meta.updated,.meta.updatedBy,.meta.expires,.meta.version)' > "$DIR/dashboards/$DB"
+
     done
 
-    echo DataSources
-    mkdir -p "$DIR/datasources"
-    for id in $(fetch_fields $KEY 'datasources' 'id'); do
-        DS=$(echo $(fetch_fields $KEY "datasources/${id}" 'name')|sed 's/ /-/g').json
-        echo DataSource $DS
-        curl -f -k -H "Authorization: Bearer ${KEY}" "${HOST}/api/datasources/${id}" | jq '' > "$DIR/datasources/${id}.json"
-    done
+    #echo DataSources
+    #mkdir -p "$DIR/datasources"
+    #for id in $(fetch_fields $KEY 'datasources' 'id'); do
+    #    DS=$(echo $(fetch_fields $KEY "datasources/${id}" 'name')|sed 's/ /-/g').json
+    #    echo DataSource $DS
+    #    curl -f -k -H "Authorization: Bearer ${KEY}" "${HOST}/api/datasources/${id}" | jq '' > "$DIR/datasources/${id}.json"
+    #done
 
-    echo Alert-Notifications
-    mkdir -p "$DIR/alert-notifications"
-    for id in $(fetch_fields $KEY 'alert-notifications' 'id'); do
-        FILENAME=${id}.json
-        echo alert-notification $FILENAME
-        curl -f -k -H "Authorization: Bearer ${KEY}" "${HOST}/api/alert-notifications/${id}" | jq 'del(.created,.updated)' > "$DIR/alert-notifications/$FILENAME"
-    done
+    #echo Alert-Notifications
+    #mkdir -p "$DIR/alert-notifications"
+    #for id in $(fetch_fields $KEY 'alert-notifications' 'id'); do
+    #    FILENAME=${id}.json
+    #    echo alert-notification $FILENAME
+    #    curl -f -k -H "Authorization: Bearer ${KEY}" "${HOST}/api/alert-notifications/${id}" | jq 'del(.created,.updated)' > "$DIR/alert-notifications/$FILENAME"
+    #done
 
     BackupDir=$(dirname "$DIR")
     cd "$BackupDir"
